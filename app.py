@@ -42,7 +42,7 @@ def home():
         f"/api/v1.0/tobs<br/>"
         f"<br/>"
         f"For temperature data given a start and end date, <br/>"
-        f"please enter in format (mm-dd-yyyy).<br/>"
+        f"please enter in format (mm-dd-yyyy). Do not add 0 before months 1-9.<br/>"
         f"Start route: /api/v1.0/<start><br/>"
         f"Start/end route: /api/v1.0/<start>/<end><br/>"
         )   
@@ -157,6 +157,55 @@ def start_end(start, end):
     #Create session link to DB
     session = Session(engine)
 
+    lowest_start_end = (session.
+                        query(Measurement.tobs).
+                        filter(
+                            and_(
+                                Measurement.date >= start,
+                                Measurement.date <= end
+                                )).
+                        order_by(Measurement.tobs).
+                        first()     
+                        )
+
+    highest_start_end = (session.
+                        query(Measurement.tobs).
+                        filter(
+                            and_(
+                                Measurement.date >= start,
+                                Measurement.date <= end
+                            )).
+                        order_by(Measurement.tobs.desc()).
+                        first()
+                            
+                        ) 
+
+    #Filter out any null values from tobs column then find average of remaining list
+    temps_start_end = (session.
+                        query(Measurement.tobs).
+                        filter(
+                            and_(
+                                Measurement.date >= start,
+                                Measurement.date <= end
+                                )
+                            )
+                        )
+
+    not_null_temps_start_end = []
+    for temp in temps_start_end:
+        if type(temp.tobs) == float:
+            not_null_temps_start_end.append(temp.tobs)
+    avg_temp_start_end = mean(not_null_temps_start_end)
+
+    return (
+        f"Start date: {start}<br/>"
+        f"End date: {end}<br/>"
+        f"<br/>"
+        f"Temperature Data:<br/>"
+        f"TMIN: {lowest_start_end}<br/>"
+        f"TMAX: {highest_start_end}<br/>"
+        f"TAVG: {avg_temp_start_end}<br/>"
+        )
 
 
     return ""
